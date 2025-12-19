@@ -159,10 +159,3 @@ The backend will compute `Capital social = Total Actif - Total Passif` and retur
 - If the frontend shows a parsing error, check backend logs — the AI may have returned non-JSON text. Use `GET /mock` for local testing.
 - Verify `VITE_USE_MOCK` if the frontend is not showing results and you don't have an API key.
 
----
-
-If you want, I can now:
-- Add a small confetti animation when the balance becomes equal after applying capital, or
-- Add server-side aggregation rules (merge synonyms: fonds commercial + savoir-faire, etc.) and unit tests.
-
-Tell me which you'd like next and I'll implement it.
