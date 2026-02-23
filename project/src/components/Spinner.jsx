@@ -1,14 +1,13 @@
-import { Loader } from 'lucide-react';
-
-export default function Spinner({ size = 20, label = 'Traitement', variant = 'indigo' }) {
-  const gradient = variant === 'indigo' ? 'from-indigo-500 to-blue-400' : 'from-amber-400 to-pink-500';
-
+export default function Spinner({ size = 20, label = 'Traitement' }) {
   return (
     <div role="status" aria-live="polite" className="inline-flex items-center gap-3">
-      <span className={`flex items-center justify-center w-9 h-9 rounded-full shadow-lg bg-gradient-to-br ${gradient}`}>
-        <Loader className="animate-spin text-white" size={size} />
-      </span>
-      <span className="text-white font-medium">{label}…</span>
+      {/* CSS ring spinner */}
+      <span
+        className="inline-block rounded-full border-2 border-white/20 border-t-actif animate-spin shrink-0"
+        style={{ width: size + 8, height: size + 8 }}
+        aria-hidden
+      />
+      <span className="text-slate-300 font-medium text-sm tracking-wide">{label}…</span>
     </div>
   );
 }

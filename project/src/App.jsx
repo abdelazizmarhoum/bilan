@@ -1,57 +1,97 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { extractText } from './api';
-import { FileText, RefreshCw, Trash2, CheckCircle, AlertTriangle, Package } from 'lucide-react';
+import { FileText, RefreshCw, Trash2, CheckCircle, AlertTriangle, Package, TrendingUp, TrendingDown } from 'lucide-react';
 import Spinner from './components/Spinner';
 import ItemRow from './components/ItemRow';
+import Confetti from './components/Confetti';
 
+/* ─── Balance Table ──────────────────────────────────────────────── */
 function BalanceTable({ title, items = [], loading = false }) {
   const total = items.reduce((s, it) => s + (Number(it.value) || 0), 0);
+  const isActif = title === 'Actif';
+
+  const topBorder = isActif ? 'border-t-actif' : 'border-t-passif';
+  const headColor = isActif ? 'text-actif' : 'text-passif';
+  const totalBg = isActif ? 'bg-actif-soft text-actif' : 'bg-passif-soft text-passif';
+  const glowClass = isActif ? 'shadow-glow-actif' : 'shadow-glow-passif';
+  const TrendIcon = isActif ? TrendingUp : TrendingDown;
+  const dotColor = isActif ? 'bg-actif' : 'bg-passif';
 
   return (
-    <div className="w-full md:w-1/2 p-4">
-      <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-        {title === 'Actif' ? <span className="text-indigo-600">●</span> : <span className="text-amber-600">●</span>}
-        {title}
-      </h3>
+    <div className="flex-1 min-w-0 flex flex-col">
+      {/* Card */}
+      <div className={`glass rounded-2xl overflow-hidden flex flex-col h-full border-t-2 ${topBorder} ${glowClass}`}>
 
-      <div className="bg-white shadow rounded overflow-hidden">
-        <table className="min-w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="p-2 text-left">Nom</th>
-              <th className="p-2 text-right">Valeur (DH)</th>
-              <th className="p-2 text-right">Compte</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && (
-              Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="border-t animate-pulse">
-                  <td className="p-2 h-6 bg-gray-100" />
-                  <td className="p-2 h-6 bg-gray-100" />
-                  <td className="p-2 h-6 bg-gray-100" />
-                </tr>
-              ))
-            )}
+        {/* Card header */}
+        <div className="px-5 py-4 flex items-center justify-between border-b border-white/[0.06]">
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${dotColor} shadow-glow-actif`} />
+            <h3 className={`text-base font-semibold tracking-wide ${headColor}`}>{title}</h3>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-500">
+            <TrendIcon size={14} />
+            <span className="text-xs font-medium">{items.length} postes</span>
+          </div>
+        </div>
 
-            {!loading && items.map((it, i) => (
-              <ItemRow key={i} item={it} side={title} />
-            ))}
-
-            {!loading && (
-              <tr className="font-semibold border-t bg-gradient-to-r from-white to-gray-50">
-                <td className="p-2">Total</td>
-                <td className="p-2 text-right text-lg">{total.toLocaleString()} DH</td>
-                <td className="p-2" />
+        {/* Table */}
+        <div className="overflow-auto flex-1">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="text-xs uppercase tracking-wider text-slate-500 border-b border-white/[0.05]">
+                <th className="px-4 py-3 text-left font-medium">Désignation</th>
+                <th className="px-4 py-3 text-right font-medium">Montant (DH)</th>
+                <th className="px-4 py-3 text-right font-medium hidden md:table-cell">Compte</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {/* Shimmer skeleton while loading */}
+              {loading && Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="border-b border-white/[0.04]">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl shimmer-cell shrink-0" />
+                      <div className="flex-1 space-y-1.5">
+                        <div className="shimmer-cell w-3/4" />
+                        <div className="shimmer-cell w-1/3" style={{ height: 10 }} />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3"><div className="shimmer-cell w-20 ml-auto" /></td>
+                  <td className="px-4 py-3 hidden md:table-cell"><div className="shimmer-cell w-12 ml-auto" /></td>
+                </tr>
+              ))}
+
+              {/* Actual rows */}
+              {!loading && items.map((it, i) => (
+                <ItemRow key={i} item={it} side={title} />
+              ))}
+
+              {/* Empty state */}
+              {!loading && items.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="px-4 py-10 text-center text-slate-600 text-sm">
+                    Aucun poste à afficher
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Total footer */}
+        {!loading && (
+          <div className={`px-5 py-3 flex items-center justify-between border-t border-white/[0.06] ${totalBg} rounded-b-2xl`}>
+            <span className="text-xs font-semibold uppercase tracking-widest opacity-70">Total</span>
+            <span className="text-lg font-bold tabular-nums">{total.toLocaleString('fr-MA')} DH</span>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
+/* ─── App ────────────────────────────────────────────────────────── */
 export default function App() {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -79,160 +119,258 @@ export default function App() {
   const actTotal = (data?.Actif || []).reduce((s, it) => s + (Number(it.value) || 0), 0);
   const passTotal = (data?.Passif || []).reduce((s, it) => s + (Number(it.value) || 0), 0);
 
-  // UI state: whether user chose to apply the calculated capital to view a rebalanced Passif
   const [appliedCapital, setAppliedCapital] = useState(false);
 
-  // Derived totals depending on whether capital is applied
   const displayedPassif = appliedCapital ? (data?.adjustedPassif || data?.Passif || []) : (data?.Passif || []);
   const displayedPassTotal = displayedPassif.reduce((s, it) => s + (Number(it.value) || 0), 0);
 
+  const [showConfetti, setShowConfetti] = useState(false);
+  const prevBalancedRef = useRef(false);
+
+  useEffect(() => {
+    const isBalancedNow = displayedPassTotal === actTotal && actTotal > 0;
+    const wasBalanced = prevBalancedRef.current;
+    if (isBalancedNow && !wasBalanced) {
+      setShowConfetti(true);
+      const t = setTimeout(() => setShowConfetti(false), 2600);
+      return () => clearTimeout(t);
+    }
+    prevBalancedRef.current = isBalancedNow;
+  }, [displayedPassTotal, actTotal]);
+
+  /* Status indicator */
+  const statusEl = loading ? (
+    <Spinner size={16} label="Traitement" />
+  ) : data ? (
+    actTotal === passTotal ? (
+      <div className="inline-flex items-center gap-1.5 bg-success-soft text-success border border-success/20 px-3 py-1 rounded-full text-xs font-semibold">
+        <CheckCircle size={13} /> Équilibré
+      </div>
+    ) : (
+      <div className="inline-flex items-center gap-1.5 bg-danger-soft text-danger border border-danger/20 px-3 py-1 rounded-full text-xs font-semibold">
+        <AlertTriangle size={13} /> Déséquilibré
+      </div>
+    )
+  ) : (
+    <div className="inline-flex items-center gap-1.5 bg-white/5 text-slate-500 border border-white/10 px-3 py-1 rounded-full text-xs font-medium">
+      En attente
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 p-6">
-      <div className="max-w-5xl mx-auto">
-        <header className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-indigo-600 to-blue-500 rounded-full w-12 h-12 flex items-center justify-center text-white shadow">
-              <Package size={20} />
+    <div className="min-h-screen p-4 md:p-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+
+        {/* ── Header ───────────────────────────────────────────── */}
+        <header className="glass rounded-2xl px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {/* Logo */}
+            <div className="relative shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-actif to-blue-700 flex items-center justify-center shadow-glow-actif">
+                <Package size={22} className="text-white" />
+              </div>
+              <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-success rounded-full border-2 border-navy-900 shadow-glow-success" />
             </div>
+
             <div>
-              <h1 className="text-2xl font-bold">Comptoir — Assistant Comptable (Bilan)</h1>
-              <p className="text-sm text-gray-600">Collez une description textuelle et laissez l'IA extraire les postes d'Actif et Passif.</p>
+              <h1 className="text-xl font-bold text-white tracking-tight">
+                Comptoir <span className="text-slate-500 font-light">—</span> Assistant Comptable
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Collez une description et laissez l'IA extraire le Bilan automatiquement.
+              </p>
             </div>
           </div>
 
-          <div className="text-right">
-            <div className="text-xs text-gray-500">Status</div>
-            {loading ? (
-              <div className="mt-1 inline-flex items-center gap-2 text-sm text-blue-600">
-                <Spinner size={16} label="Traitement" />
-              </div>
-            ) : data ? (
-              actTotal === passTotal ? (
-                <div className="mt-1 inline-flex items-center gap-2 text-sm text-green-700"><CheckCircle /> Bilan équilibré</div>
-              ) : (
-                <div className="mt-1 inline-flex items-center gap-2 text-sm text-red-700"><AlertTriangle /> Déséquilibre</div>
-              )
-            ) : (
-              <div className="mt-1 text-sm text-gray-400">En attente</div>
-            )}
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-xs text-slate-600 uppercase tracking-widest font-medium">Statut</span>
+            {statusEl}
           </div>
         </header>
 
-        <form onSubmit={submit} className="mb-4 bg-white p-4 rounded shadow">
-          <label className="block text-sm font-medium mb-2">Description</label>
+        {/* ── Input Form ───────────────────────────────────────── */}
+        <form onSubmit={submit} className="glass rounded-2xl p-5 space-y-4">
+          <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500">
+            Description financière
+          </label>
+
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={6}
-            className="w-full p-3 rounded border resize-none focus:ring-2 focus:ring-indigo-300"
-            placeholder="Collez la description financière ici..."
+            className="w-full bg-navy-950/60 border border-white/[0.07] rounded-xl p-4 text-sm text-slate-200 placeholder-slate-600 resize-none transition-all duration-200 focus:outline-none focus:border-actif/50 focus:shadow-glow-actif focus:bg-navy-950/80"
+            placeholder="Collez ici la description financière de l'entreprise…"
             disabled={loading}
           />
 
-          <div className="flex gap-2 mt-3">
-            <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded inline-flex items-center gap-2" disabled={loading}>
-              {loading ? <Spinner size={16} label="Traitement" /> : (<><FileText size={16} />Analyser</>)}
+          <div className="flex flex-wrap gap-3">
+            {/* Analyser */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex items-center gap-2 bg-actif hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors duration-150 shadow-glow-actif"
+            >
+              {loading
+                ? <Spinner size={14} label="Traitement" />
+                : <><FileText size={15} /> Analyser</>
+              }
             </button>
 
+            {/* Exemple */}
             <button
               type="button"
-              className="bg-white border px-4 py-2 rounded inline-flex items-center gap-2"
+              disabled={loading}
               onClick={() => setText(sample)}
-              disabled={loading}
+              className="inline-flex items-center gap-2 glass-sm hover:bg-white/[0.06] disabled:opacity-40 text-slate-300 text-sm font-medium px-5 py-2.5 rounded-xl transition-colors duration-150"
             >
-              <RefreshCw size={16} /> Exemple
+              <RefreshCw size={15} /> Exemple
             </button>
 
+            {/* Réinitialiser */}
             <button
               type="button"
-              className="bg-white border px-4 py-2 rounded inline-flex items-center gap-2"
-              onClick={() => { setText(''); setData(null); setError(null); }}
               disabled={loading}
+              onClick={() => { setText(''); setData(null); setError(null); setAppliedCapital(false); }}
+              className="inline-flex items-center gap-2 glass-sm hover:bg-danger-soft hover:text-danger disabled:opacity-40 text-slate-400 text-sm font-medium px-5 py-2.5 rounded-xl transition-colors duration-150"
             >
-              <Trash2 size={16} /> Réinitialiser
+              <Trash2 size={15} /> Réinitialiser
             </button>
           </div>
         </form>
 
+        {/* ── Error Banner ─────────────────────────────────────── */}
         {error && (
-          <div className="mb-4 text-red-700">Erreur: {error}</div>
+          <div className="flex items-center gap-3 bg-danger-soft border border-danger/20 text-danger rounded-xl px-5 py-4 text-sm font-medium animate-fade-in-up">
+            <AlertTriangle size={18} className="shrink-0" />
+            <span>{error}</span>
+          </div>
         )}
 
-        <section className="mb-6">
-          <div className="flex flex-col md:flex-row -mx-4">
+        {/* ── Balance Tables ───────────────────────────────────── */}
+        <section className="space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
             <BalanceTable title="Actif" items={data?.Actif || []} loading={loading} />
             <BalanceTable title="Passif" items={displayedPassif} loading={loading} />
           </div>
 
-          <div className="mt-4 bg-white p-4 rounded shadow flex items-center justify-between">
-            <div>
-              <div className="text-sm text-gray-600">Total Actif: <strong>{actTotal.toLocaleString()} DH</strong></div>
-              <div className="text-sm text-gray-600">Total Passif: <strong>{displayedPassTotal.toLocaleString()} DH</strong></div>
-            </div>
+          {/* ── Summary & Reconciliation ─────────────────────── */}
+          {(data || loading) && (
+            <div className="glass rounded-2xl p-5 space-y-4 animate-fade-in-up">
 
-            <div className="text-right">
-              {data?.reconciliation?.capitalCalculated && !data?.reconciliation?.balanced && !appliedCapital && (
-                <div className="text-red-700 font-semibold mb-2 inline-flex items-center gap-2"><AlertTriangle /> Le bilan n'est pas équilibré</div>
-              )}
+              {/* Totals row */}
+              <div className="flex flex-wrap gap-3">
+                <div className="flex-1 min-w-[160px] bg-actif-soft border border-actif/20 rounded-xl px-4 py-3">
+                  <div className="text-[10px] uppercase tracking-widest text-actif/70 font-semibold mb-0.5">Total Actif</div>
+                  <div className="text-lg font-bold text-actif tabular-nums">{actTotal.toLocaleString('fr-MA')} DH</div>
+                </div>
+                <div className="flex-1 min-w-[160px] bg-passif-soft border border-passif/20 rounded-xl px-4 py-3">
+                  <div className="text-[10px] uppercase tracking-widest text-passif/70 font-semibold mb-0.5">Total Passif</div>
+                  <div className="text-lg font-bold text-passif tabular-nums">{displayedPassTotal.toLocaleString('fr-MA')} DH</div>
+                </div>
 
-              {data?.reconciliation?.capitalCalculated && !data?.reconciliation?.balanced && (
-                <div className="text-sm text-gray-600">
-                  <div>Calcul du <strong>Capital social</strong> : <br />
-                    <span className="font-medium">Capital social = Total Actif - Total Passif</span>
+                {/* Balance state pill */}
+                {data && (
+                  <div className="flex items-center">
+                    {data.reconciliation?.balanced || (appliedCapital && data.reconciliation?.balancedAfterApplyingCapital) ? (
+                      <div className="inline-flex items-center gap-2 bg-success-soft border border-success/30 text-success px-4 py-2 rounded-xl font-semibold text-sm shadow-glow-success">
+                        <CheckCircle size={16} /> Le bilan est équilibré
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-2 bg-danger-soft border border-danger/30 text-danger px-4 py-2 rounded-xl font-semibold text-sm shadow-glow-danger">
+                        <AlertTriangle size={16} /> Le bilan n'est pas équilibré
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-2">
-                    <div className="inline-flex items-center gap-3">
-                      <div className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded">Total Actif: {data.reconciliation.originalTotalActif.toLocaleString()} DH</div>
-                      <div className="px-3 py-1 bg-amber-50 text-amber-700 rounded">Total Passif: {data.reconciliation.originalTotalPassif.toLocaleString()} DH</div>
-                      <div className="px-3 py-1 bg-green-50 text-green-700 rounded">Différence: {data.reconciliation.originalDifference.toLocaleString()} DH</div>
-                    </div>
+                )}
+              </div>
 
-                    <div className="mt-3">
-                      <div className="inline-flex items-center gap-2">
-                        <div className="text-sm">Capital social (calculé) :</div>
-                        <div className="font-bold text-lg">{data.reconciliation.capitalValue?.toLocaleString()} DH</div>
-                        {data.reconciliation.capitalCalculated && (
-                          <span className="ml-3 inline-block bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">Calculé automatiquement</span>
-                        )}
-                      </div>
+              {/* Reconciliation "Capital social" panel */}
+              {data?.reconciliation?.capitalCalculated && !data?.reconciliation?.balanced && (
+                <div className="border border-white/[0.07] rounded-xl p-4 space-y-4 bg-navy-950/40">
 
-                      <div className="mt-2">
-                        {!appliedCapital ? (
-                          <button className="mt-2 bg-green-600 text-white px-3 py-1 rounded inline-flex items-center gap-2" onClick={() => setAppliedCapital(true)}>
-                            Appliquer le capital calculé
-                          </button>
-                        ) : (
-                          <button className="mt-2 bg-white border px-3 py-1 rounded inline-flex items-center gap-2" onClick={() => setAppliedCapital(false)}>
-                            Retirer le capital appliqué
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                  {/* Formula header */}
+                  <div className="flex items-center gap-2">
+                    <span className="w-1 h-5 bg-actif rounded-full" />
+                    <h4 className="text-sm font-semibold text-slate-200">
+                      Calcul du <span className="text-actif">Capital social</span> manquant
+                    </h4>
+                  </div>
+
+                  <p className="text-xs text-slate-500 font-mono bg-navy-900 rounded-lg px-3 py-2 border border-white/[0.05]">
+                    Capital social = Total Actif − Total Passif
+                  </p>
+
+                  {/* Breakdown chips */}
+                  <div className="flex flex-wrap gap-2 text-xs font-medium">
+                    <span className="bg-actif-soft text-actif border border-actif/20 px-3 py-1.5 rounded-lg tabular-nums">
+                      Actif : {data.reconciliation.originalTotalActif.toLocaleString('fr-MA')} DH
+                    </span>
+                    <span className="text-slate-600 self-center">−</span>
+                    <span className="bg-passif-soft text-passif border border-passif/20 px-3 py-1.5 rounded-lg tabular-nums">
+                      Passif : {data.reconciliation.originalTotalPassif.toLocaleString('fr-MA')} DH
+                    </span>
+                    <span className="text-slate-600 self-center">=</span>
+                    <span className="bg-white/[0.07] text-white border border-white/10 px-3 py-1.5 rounded-lg font-bold tabular-nums">
+                      {data.reconciliation.capitalValue?.toLocaleString('fr-MA')} DH
+                    </span>
+                    <span className="bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-2.5 py-1.5 rounded-lg text-[11px]">
+                      Calculé automatiquement
+                    </span>
+                  </div>
+
+                  {/* Apply / Remove toggle */}
+                  <div>
+                    {!appliedCapital ? (
+                      <button
+                        onClick={() => setAppliedCapital(true)}
+                        className="inline-flex items-center gap-2 bg-success hover:bg-emerald-400 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors duration-150 shadow-glow-success"
+                      >
+                        <CheckCircle size={15} /> Appliquer le capital calculé
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setAppliedCapital(false)}
+                        className="inline-flex items-center gap-2 glass-sm hover:bg-white/[0.06] text-slate-300 text-sm font-medium px-5 py-2.5 rounded-xl transition-colors duration-150"
+                      >
+                        <Trash2 size={15} /> Retirer le capital appliqué
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Balanced message when everything matches */}
-              {data?.reconciliation?.balanced && (
-                <div className="text-green-700 font-semibold inline-flex items-center gap-2"><CheckCircle /> Le bilan est équilibré</div>
+              {/* Raw JSON debug (collapsible) */}
+              {data && (
+                <details className="text-xs text-slate-600 group">
+                  <summary className="cursor-pointer select-none hover:text-slate-400 transition-colors duration-150 inline-flex items-center gap-1.5">
+                    <span className="group-open:rotate-90 transition-transform duration-150 inline-block">▶</span>
+                    Voir le JSON retourné
+                  </summary>
+                  <pre className="mt-3 p-4 bg-navy-950/60 border border-white/[0.05] rounded-xl overflow-auto text-[11px] text-slate-500 leading-relaxed">
+                    {JSON.stringify(data, null, 2)}
+                  </pre>
+                </details>
               )}
             </div>
-          </div>
-
-          <details className="mt-3 text-sm text-gray-600">
-            <summary className="cursor-pointer">Voir JSON retourné</summary>
-            <pre className="mt-2 p-2 bg-gray-50 rounded overflow-auto text-xs">{JSON.stringify(data, null, 2)}</pre>
-          </details>
+          )}
         </section>
 
-        <footer className="text-xs text-gray-500 mt-6">Backend: POST <code>/extract</code> on <code>VITE_API_URL</code> or <code>http://localhost:3000</code></footer>
+        {/* ── Footer ───────────────────────────────────────────── */}
+        <footer className="text-center text-[11px] text-slate-700 pb-4">
+          Backend : <code className="text-slate-600">POST /extract</code> sur{' '}
+          <code className="text-slate-600">VITE_API_URL</code> (défaut : <code className="text-slate-600">http://localhost:3000</code>)
+        </footer>
       </div>
 
-      {/* Loading overlay */}
+      {/* ── Confetti overlay (logic unchanged) ─────────────────── */}
+      {showConfetti && <Confetti show={true} duration={2500} />}
+
+      {/* ── Full-screen loading overlay ─────────────────────────── */}
       {loading && (
-        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center">
-          <div className="bg-white/10 backdrop-blur-md p-6 rounded-lg shadow-lg border border-white/20">
-            <Spinner size={28} label="Traitement" />
+        <div className="fixed inset-0 z-40 bg-navy-950/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="glass rounded-2xl px-8 py-7 flex flex-col items-center gap-4 shadow-card">
+            <Spinner size={26} label="Analyse en cours" />
+            <p className="text-xs text-slate-500">L'IA extrait les postes comptables…</p>
           </div>
         </div>
       )}

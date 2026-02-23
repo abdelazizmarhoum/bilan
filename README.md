@@ -20,6 +20,7 @@ This repository contains two main folders:
   - Reusable `Spinner` and `ItemRow` components for better visuals.
   - Loading skeleton rows and an overlay while processing.
   - Clear imbalance UI: shows when "Le bilan n'est pas équilibré", displays the calculation for `Capital social`, and provides a button to "Appliquer le capital calculé" (toggle) to view a rebalanced table.
+    - Celebratory confetti animation when the balance becomes equal (visually confirms success).
 
 ---
 
@@ -108,6 +109,8 @@ The server does NOT mutate the original `Passif` array silently. Instead the res
 - `adjustedPassif` — the `Passif` array with the computed capital appended (for display if you choose to apply it)
 
 On the frontend you will therefore see a clear message that the balance is not equal, the calculation used, and a toggle button to apply or remove the computed capital — giving users control and transparency.
+
+Additionally, when the user applies the computed capital and the totals match, the UI briefly displays a confetti animation to celebrate the balanced state.
 
 ---
 
