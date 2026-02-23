@@ -4,88 +4,61 @@ import { FileText, RefreshCw, Trash2, CheckCircle, AlertTriangle, Package, Trend
 import Spinner from './components/Spinner';
 import ItemRow from './components/ItemRow';
 import Confetti from './components/Confetti';
+import { classifyItems } from './utils/classify';
 
 /* ─── Balance Table ──────────────────────────────────────────────── */
-function BalanceTable({ title, items = [], loading = false }) {
+function GroupedBalanceTable({ title, items = [], loading = false }) {
+  const groups = classifyItems(items, title);
   const total = items.reduce((s, it) => s + (Number(it.value) || 0), 0);
-  const isActif = title === 'Actif';
-
-  const topBorder = isActif ? 'border-t-actif' : 'border-t-passif';
-  const headColor = isActif ? 'text-actif' : 'text-passif';
-  const totalBg = isActif ? 'bg-actif-soft text-actif' : 'bg-passif-soft text-passif';
-  const glowClass = isActif ? 'shadow-glow-actif' : 'shadow-glow-passif';
-  const TrendIcon = isActif ? TrendingUp : TrendingDown;
-  const dotColor = isActif ? 'bg-actif' : 'bg-passif';
 
   return (
     <div className="flex-1 min-w-0 flex flex-col">
-      {/* Card */}
-      <div className={`glass rounded-2xl overflow-hidden flex flex-col h-full border-t-2 ${topBorder} ${glowClass}`}>
-
-        {/* Card header */}
+      <div className={`glass rounded-2xl overflow-hidden flex flex-col h-full`}> 
         <div className="px-5 py-4 flex items-center justify-between border-b border-white/[0.06]">
           <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${dotColor} shadow-glow-actif`} />
-            <h3 className={`text-base font-semibold tracking-wide ${headColor}`}>{title}</h3>
+            <span className={`w-2 h-2 rounded-full ${title === 'Actif' ? 'bg-actif' : 'bg-passif'}`} />
+            <h3 className={`text-base font-semibold tracking-wide text-white`}>{title}</h3>
           </div>
-          <div className="flex items-center gap-1.5 text-slate-500">
-            <TrendIcon size={14} />
+          <div className="flex items-center gap-1.5 text-slate-400">
             <span className="text-xs font-medium">{items.length} postes</span>
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-auto flex-1">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="text-xs uppercase tracking-wider text-slate-500 border-b border-white/[0.05]">
-                <th className="px-4 py-3 text-left font-medium">Désignation</th>
-                <th className="px-4 py-3 text-right font-medium">Montant (DH)</th>
-                <th className="px-4 py-3 text-right font-medium hidden md:table-cell">Compte</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Shimmer skeleton while loading */}
-              {loading && Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="border-b border-white/[0.04]">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl shimmer-cell shrink-0" />
-                      <div className="flex-1 space-y-1.5">
-                        <div className="shimmer-cell w-3/4" />
-                        <div className="shimmer-cell w-1/3" style={{ height: 10 }} />
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3"><div className="shimmer-cell w-20 ml-auto" /></td>
-                  <td className="px-4 py-3 hidden md:table-cell"><div className="shimmer-cell w-12 ml-auto" /></td>
-                </tr>
+        <div className="p-4 flex-1 overflow-auto">
+          {loading && (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-6 bg-white/[0.03] rounded animate-pulse" />
               ))}
+            </div>
+          )}
 
-              {/* Actual rows */}
-              {!loading && items.map((it, i) => (
-                <ItemRow key={i} item={it} side={title} />
-              ))}
+          {!loading && groups.map((g, gi) => (
+            <div key={gi} className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm font-semibold text-slate-300">{g.title}</div>
+                <div className="text-sm font-semibold text-slate-200">{g.total.toLocaleString('fr-MA')} DH</div>
+              </div>
 
-              {/* Empty state */}
-              {!loading && items.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="px-4 py-10 text-center text-slate-600 text-sm">
-                    Aucun poste à afficher
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              <div className="overflow-hidden rounded border border-white/[0.03]">
+                <table className="w-full text-sm">
+                  <tbody>
+                    {g.items.map((it, i) => (
+                      <ItemRow key={i} item={it} side={title} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+
+          {!loading && (
+            <div className="mt-2 pt-3 border-t border-white/[0.04] flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-widest text-slate-300">Total</span>
+              <span className="text-lg font-bold tabular-nums">{total.toLocaleString('fr-MA')} DH</span>
+            </div>
+          )}
         </div>
-
-        {/* Total footer */}
-        {!loading && (
-          <div className={`px-5 py-3 flex items-center justify-between border-t border-white/[0.06] ${totalBg} rounded-b-2xl`}>
-            <span className="text-xs font-semibold uppercase tracking-widest opacity-70">Total</span>
-            <span className="text-lg font-bold tabular-nums">{total.toLocaleString('fr-MA')} DH</span>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -249,8 +222,8 @@ export default function App() {
         {/* ── Balance Tables ───────────────────────────────────── */}
         <section className="space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
-            <BalanceTable title="Actif" items={data?.Actif || []} loading={loading} />
-            <BalanceTable title="Passif" items={displayedPassif} loading={loading} />
+            <GroupedBalanceTable title="Actif" items={data?.Actif || []} loading={loading} />
+            <GroupedBalanceTable title="Passif" items={displayedPassif} loading={loading} />
           </div>
 
           {/* ── Summary & Reconciliation ─────────────────────── */}

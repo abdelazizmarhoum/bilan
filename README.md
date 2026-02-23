@@ -20,6 +20,7 @@ This repository contains two main folders:
   - Reusable `Spinner` and `ItemRow` components for better visuals.
   - Loading skeleton rows and an overlay while processing.
   - Clear imbalance UI: shows when "Le bilan n'est pas équilibré", displays the calculation for `Capital social`, and provides a button to "Appliquer le capital calculé" (toggle) to view a rebalanced table.
+  - Grouped presentation: the Bilan is now split into accounting classes (e.g., "Actif Immobilisé", "Actif Circulant" on the Actif side; "Capitaux Propres", "Dettes Circulantes" on the Passif side) with subtotals per class.
     - Celebratory confetti animation when the balance becomes equal (visually confirms success).
 
 ---
