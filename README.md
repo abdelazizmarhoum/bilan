@@ -1,42 +1,46 @@
-# Comptoir — Assistant Comptable (Bilan) ⚖️
+# Comptoir — Assistant Comptable (Bilan)
 
-This repository contains two main folders:
+Bienvenue dans le projet « Comptoir » : un assistant qui transforme une description textuelle en un Bilan comptable structuré selon les règles de présentation (Actif / Passif), avec des outils d'aide à la réconciliation.
 
-- `backend` — Express server that sends a carefully crafted prompt to a Large Language Model (Gemini) and returns structured financial data.
-- `project` — Vite + React frontend (Tailwind, lucide-react) that posts narrative text to the backend and displays a polished Balance Sheet (Bilan).
+Ce dépôt contient deux parties principales :
+
+- `backend` — serveur Express qui appelle un modèle LLM (Gemini) pour extraire les postes financiers depuis un texte libre et renvoyer un JSON structuré.
+- `project` — application frontend Vite + React utilisant Tailwind et lucide-react pour afficher un Bilan interactif et professionnel.
 
 ---
 
-## ✅ Features implemented
+## ✅ Fonctionnalités principales
 
 - Backend
-  - Calls Gemini to extract `Actif` and `Passif` from natural language input (returns a strict JSON structure).
-  - Robust parsing and error handling for AI responses.
-  - Reconciliation logic: computes **Capital social** when it is missing (but does not silently mutate the original `Passif`). It returns `reconciliation` details and an `adjustedPassif` array containing the calculated capital for optional display.
-  - A development `GET /mock` endpoint to return a sample response for frontend testing without an API key.
+  - Appelle Gemini pour extraire `Actif` et `Passif` à partir d'un texte libre (réponse attendue en JSON strict).
+  - Parsing robuste et gestion des erreurs liées aux réponses IA.
+  - Règles de réconciliation : si `Capital social` est absent, le serveur calcule la valeur manquante (sans modifier silencieusement l'original `Passif`) et renvoie :
+    - `reconciliation` (totaux originaux, différence, capital calculé, statuts),
+    - `adjustedPassif` (Passif avec le capital calculé ajouté, pour affichage optionnel).
+  - `GET /mock` pour développement local sans clé API.
 
 - Frontend
-  - Clean, colorful UI built with Tailwind + lucide-react icons.
-  - Reusable `Spinner` and `ItemRow` components for better visuals.
-  - Loading skeleton rows and an overlay while processing.
-  - Clear imbalance UI: shows when "Le bilan n'est pas équilibré", displays the calculation for `Capital social`, and provides a button to "Appliquer le capital calculé" (toggle) to view a rebalanced table.
-  - Grouped presentation: the Bilan is now split into accounting classes (e.g., "Actif Immobilisé", "Actif Circulant" on the Actif side; "Capitaux Propres", "Dettes Circulantes" on the Passif side) with subtotals per class.
-    - Celebratory confetti animation when the balance becomes equal (visually confirms success).
+  - UI moderne et colorée basée sur Tailwind + lucide-react.
+  - Composants réutilisables : `Spinner`, `ItemRow`, `Confetti`.
+  - Chargement animé (squelettes) et overlay pendant l'analyse.
+  - Présentation groupée par classes comptables : par exemple "Actif Immobilisé", "Actif Circulant" pour l'Actif ; "Capitaux Propres", "Dettes Circulantes" pour le Passif, avec sous-totaux par classe.
+  - UI de réconciliation claire : affichage de l'écart, calcul du `Capital social`, et bouton pour « Appliquer le capital calculé » (toggle) — l'utilisateur contrôle l'application du correctif.
+  - Animation de célébration (confetti) lorsque le bilan devient équilibré.
 
 ---
 
-## 🚀 Quick start
+## 🚀 Installation et démarrage
 
 ### 1) Backend
 
-1. Create a `.env` in `backend/` or set `GENAI_API_KEY` in your environment:
+1. Copier ou créer `backend/.env` et définir la clé Gemini :
 
 ```env
 GENAI_API_KEY=sk-...
 PORT=3000
 ```
 
-2. Install dependencies and run:
+2. Installer et lancer le serveur :
 
 ```bash
 cd backend
@@ -44,18 +48,18 @@ npm install
 node server.js
 ```
 
-If you do not have a Gemini API key yet, use the mock endpoint (see below) for frontend work.
+Si vous n'avez pas de clé API, vous pouvez utiliser l'endpoint de mock pour le développement (`GET /mock`).
 
 ### 2) Frontend
 
-1. Configure `project/.env` (defaults shown):
+1. Configurer `project/.env` (valeurs par défaut) :
 
 ```env
 VITE_API_URL=http://localhost:3000
-VITE_USE_MOCK=true   # set to false to call the real /extract endpoint
+VITE_USE_MOCK=true   # mettre à false pour appeler l'endpoint /extract réel
 ```
 
-2. Install and run the dev server:
+2. Installer et lancer le front :
 
 ```bash
 cd project
@@ -63,61 +67,86 @@ npm install
 npm run dev
 ```
 
-3. Open the Vite URL (typically http://localhost:5173).
+3. Ouvrir l'URL fournie par Vite (généralement http://localhost:5173).
 
 ---
 
-## 📡 API Endpoints
+## 📡 API exposées
 
-- POST /extract
-  - Request body: { text: string }
-  - Response (success):
+- POST `/extract`
+  - Corps de la requête : `{ "text": "...description libre..." }`
+  - Réponse (succès) : JSON structuré, exemple :
 
 ```json
 {
-  "Actif": [ { "name": "...", "value": 123, "account_number": "..." } ],
-  "Passif": [ { "name": "...", "value": 456, "account_number": "..." } ],
-  "adjustedPassif": [ /* Passif + computed Capital social (optional) */ ],
+  "Actif": [ { "name": "Fonds commercial", "value": 500000, "account_number": "205" } ],
+  "Passif": [ { "name": "Capital social", "value": 1500000, "account_number": "101" } ],
+  "adjustedPassif": [ /* Passif + capital calculé (optionnel) */ ],
   "reconciliation": {
-    "originalTotalActif": 123,
-    "originalTotalPassif": 100,
-    "originalDifference": 23,
+    "originalTotalActif": 3650000,
+    "originalTotalPassif": 3500000,
+    "originalDifference": 150000,
     "capitalCalculated": true,
-    "capitalValue": 23,
+    "capitalValue": 150000,
     "balanced": false,
     "balancedAfterApplyingCapital": true
   }
 }
 ```
 
-- GET /mock
-  - Returns a sample `Actif`/`Passif` response for development without AI credentials.
+- GET `/mock` — retourne un exemple statique utile en développement.
 
 ---
 
-## 🧾 How Capital Social is handled
+## 🧾 Gestion du `Capital social`
 
-When the AI output does not include a `Capital social` item in `Passif` and the totals are unequal, the server computes:
+Si le modèle IA ne fournit pas de poste `Capital social` dans le `Passif` et que les totaux sont inégaux, le serveur calcule :
 
 ```
 Capital social = Total Actif - Total Passif
 ```
 
-The server does NOT mutate the original `Passif` array silently. Instead the response contains:
+Le serveur n'altère pas le `Passif` original de façon silencieuse ; il renvoie :
 
-- `reconciliation.capitalCalculated` (boolean) — indicates the capital was computed
-- `reconciliation.capitalValue` — the numeric value computed
-- `adjustedPassif` — the `Passif` array with the computed capital appended (for display if you choose to apply it)
+- `reconciliation.capitalCalculated` (booléen) — indique qu'un capital a été calculé,
+- `reconciliation.capitalValue` — la valeur calculée,
+- `adjustedPassif` — le tableau `Passif` avec le capital ajouté (pour affichage optionnel si l'utilisateur choisit d'appliquer le correctif).
 
-On the frontend you will therefore see a clear message that the balance is not equal, the calculation used, and a toggle button to apply or remove the computed capital — giving users control and transparency.
-
-Additionally, when the user applies the computed capital and the totals match, the UI briefly displays a confetti animation to celebrate the balanced state.
+Dans l'interface, l'utilisateur voit d'abord l'écart et la formule. Il peut ensuite appliquer le capital calculé pour afficher un tableau rebalancé ; une animation confetti apparaît brièvement si le bilan devient équilibré.
 
 ---
 
-## 🧪 Testing scenarios (example)
+## 🧾 Présentation groupée par classes comptables
 
-Use this sample narrative in the frontend (or send it directly to POST /extract):
+Le frontend regroupe maintenant les postes en classes (exemples) :
+
+- Actif Immobilisé (comptes commençant par `2`, mots-clés : fonds, matériel, logiciel, mobilier),
+- Actif Circulant (comptes `3`, `4`, `5`, mots-clés : stock, créances, banque, caisse),
+- Capitaux Propres (comptes `1`, mots-clés : capital, résultat, réserve),
+- Dettes Financières (comptes `16/17`, mots-clés : emprunt),
+- Dettes Circulantes (comptes `4x`, mots-clés : fournisseurs, salaires, fiscalité).
+
+La classification est effectuée par `project/src/utils/classify.js` via des heuristiques sur `account_number` et des mots-clés. Elle fournit des sous-totaux par classe et le total général.
+
+Remarque : ces règles sont heuristiques et peuvent être affinées selon votre Plan Comptable Général ou préférences locales.
+
+---
+
+## 🛠 Notes de développement et améliorations possibles
+
+- Robustesse parsing IA : le modèle peut parfois renvoyer des explications ou un format inattendu — nous nettoyons les fences de code et tentons de parser le JSON, mais des validations supplémentaires sont utiles.
+- Améliorations possibles :
+  - panneau de réglage pour personnaliser les mappings comptes→classes,
+  - règles serveur pour normaliser et fusionner des postes (ex. fonds commercial + savoir-faire),
+  - tests unitaires pour le parsing et la réconciliation,
+  - export/print (PDF / Excel) pour le Bilan finalisé,
+  - améliorations d'accessibilité (labels ARIA, navigation clavier) — en cours.
+
+---
+
+## 🧪 Exemple de test
+
+Collez le texte d'exemple suivant dans l'UI ou envoyez-le à `POST /extract` pour vérifier le calcul automatique du capital :
 
 > Ali détient une entreprise de prestations de services informatiques. Il est propriétaire des éléments suivants :
 >
@@ -144,22 +173,20 @@ Use this sample narrative in the frontend (or send it directly to POST /extract)
 > Les cotisations dues à la Sécurité sociale sont de 40 000 DH.
 > Les taxes dues à l’État sont de 60 000 DH.
 
-The backend will compute `Capital social = Total Actif - Total Passif` and return the reconciliation details for the frontend to display and optionally apply.
+Le backend calculera le `Capital social` manquant et la UI proposera d'appliquer ce montant pour rebalancer le bilan.
 
 ---
 
-## 🛠 Development notes & next steps
+## Dépannage
 
-- The AI model is asked to return a strict JSON with `Actif` and `Passif`. However, model outputs can be noisy — we already strip code fences and parse JSON carefully. Consider adding:
-  - Stronger validation rules for expected account numbers and amounts.
-  - Unit tests for parsing, reconciliation rules, and UI behaviors.
-  - Export/print functionality (PDF / Excel) for finalized balance sheets.
-  - Accessibility improvements (ARIA labels, keyboard navigation) and internationalization (FR / EN UI strings).
+- Si le frontend affiche une erreur de parsing : vérifiez les logs du backend — le modèle a peut-être renvoyé du texte non-JSON. Utilisez `GET /mock` pour tester localement sans clé.
+- Vérifiez `VITE_USE_MOCK` dans `project/.env` si le frontend est bloqué et vous n'avez pas de clé API.
 
 ---
 
-## ❓ Troubleshooting
+Si vous le souhaitez, je peux :
+- ajouter une interface de configuration des mappings comptes→classes, ou
+- déplacer la logique de classification côté serveur pour que l'API renvoie directement les classes, ou
+- terminer les améliorations d'accessibilité et réaliser une passe QA visuelle.
 
-- If the frontend shows a parsing error, check backend logs — the AI may have returned non-JSON text. Use `GET /mock` for local testing.
-- Verify `VITE_USE_MOCK` if the frontend is not showing results and you don't have an API key.
-
+Indiquez quelle option vous préférez et je l'implémenterai.
