@@ -181,12 +181,3 @@ Le backend calculera le `Capital social` manquant et la UI proposera d'appliquer
 
 - Si le frontend affiche une erreur de parsing : vérifiez les logs du backend — le modèle a peut-être renvoyé du texte non-JSON. Utilisez `GET /mock` pour tester localement sans clé.
 - Vérifiez `VITE_USE_MOCK` dans `project/.env` si le frontend est bloqué et vous n'avez pas de clé API.
-
----
-
-Si vous le souhaitez, je peux :
-- ajouter une interface de configuration des mappings comptes→classes, ou
-- déplacer la logique de classification côté serveur pour que l'API renvoie directement les classes, ou
-- terminer les améliorations d'accessibilité et réaliser une passe QA visuelle.
-
-Indiquez quelle option vous préférez et je l'implémenterai.
